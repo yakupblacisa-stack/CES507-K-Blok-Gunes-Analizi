@@ -129,10 +129,10 @@ def cephe_gelis_acisi_hesapla(gunes_yuksekligi, gunes_azimutu, cephe_azimutu):
 
 # K Blok cephe yönleri (Google Earth ölçümüne göre)
 cephe_yonleri = {
-    "Kuzeydoğu": 23.70,
-    "Güneydoğu": 113.70,
-    "Güneybatı": 203.70,
-    "Kuzeybatı": 293.70
+    "Kuzeydoğu": 23.81,
+    "Güneydoğu": 114.79,
+    "Güneybatı": 201.95,
+    "Kuzeybatı": 291.12
 }
 
 def pvlib_cephe_gelis_acisi_hesapla(zenit, azimut, cephe_azimutu):
@@ -197,10 +197,10 @@ st.write("Güneş açısı hesaplama uygulamasına hoş geldiniz.")
 col1, col2 = st.columns(2)
 
 with col1:
-    enlem = st.number_input("📍 Enlem", value=40.996320, format="%.6f")
+    enlem = st.number_input("📍 Enlem", value=40.995997, format="%.6f")
 
 with col2:
-    boylam = st.number_input("🧭 Boylam", value=29.065165, format="%.6f")
+    boylam = st.number_input("🧭 Boylam", value=29.065936, format="%.6f")
 tarih_col, buton_col = st.columns([3, 1])
 
 with tarih_col:
@@ -598,13 +598,13 @@ if hesapla:
         col_b1, col_b2, col_b3 = st.columns(3)
 
         with col_b1:
-            bina_genislik = st.number_input("Bina Genişliği (m)", value=20.0)
+            bina_genislik = st.number_input("Bina Genişliği (m)", value=20.58)
 
         with col_b2:
-            bina_uzunluk = st.number_input("Bina Uzunluğu (m)", value=40.0)
+            bina_uzunluk = st.number_input("Bina Uzunluğu (m)", value=31.30)
 
         with col_b3:
-            bina_yukseklik = st.number_input("Bina Yüksekliği (m)", value=15.0)
+            bina_yukseklik = st.number_input("Bina Yüksekliği (m)", value=21.0)
                     # Örnek binanın 3 boyutlu modeli
         x = bina_genislik / 2
         y = bina_uzunluk / 2

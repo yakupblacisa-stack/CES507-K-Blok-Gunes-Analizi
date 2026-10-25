@@ -19,7 +19,7 @@ Bu aşama kapsamında aşağıdaki çalışmalar tamamlanmıştır:
 - Güneş yükseklik açısı (α) hesaplaması
 - Güneş azimut açısı (γs) hesaplaması
 - Güneş konumu sonuçlarının pvlib ile karşılaştırılması
-- K Blok binasının dört cephe yönünün belirlenmesi
+- K Blok binasının dört ana cephe yönünün belirlenmesi
 - Dört cepheye güneş ışınlarının geliş açılarının hesaplanması
 - Cephe geliş açılarının pvlib sonuçlarıyla karşılaştırılması
 - İki hesaplama yöntemi arasındaki açısal farkların belirlenmesi
@@ -30,53 +30,78 @@ Bu aşama kapsamında aşağıdaki çalışmalar tamamlanmıştır:
 
 **Bina:** İstanbul Medeniyet Üniversitesi Kuzey Kampüs K Blok
 
-- **Enlem:** 40.996320° Kuzey
-- **Boylam:** 29.065165° Doğu
+- **Enlem:** 40.995997° Kuzey
+- **Boylam:** 29.065936° Doğu
 
 Binanın coğrafi koordinatları, güneşin saatlik konumunun hesaplanmasında esas alınmıştır.
 
+## 📐 K Blok Bina Ölçüleri
+
+K Blok binasının yaklaşık yatay boyutları Google Earth üzerinden yapılan ölçümler kullanılarak belirlenmiştir.
+
+| Özellik | Değer |
+|---|---|
+| Bina genişliği | 20,58 m |
+| Bina uzunluğu | 31,30 m |
+| Kat sayısı | 6 kat (model kabulü) |
+| Kat yüksekliği | 3,50 m (varsayım) |
+| Toplam bina yüksekliği | 21,00 m (tahmini) |
+
+**Google Earth üzerinden ölçülen bina kenarları:**
+
+| Kenar | Ölçülen uzunluk | Kenar doğrultusu |
+|---|---|---|
+| Üst kenar | 20,58 m | 113,81° |
+| Sağ kenar | 31,30 m | 204,79° |
+| Alt kenar | 18,85 m | 111,95° |
+| Sol kenar | 31,98 m | 201,12° |
+
+**Not:** Bina yüksekliği doğrudan ölçülmemiştir. Altı kat ve kat başına 3,50 metre kabul edilerek yaklaşık 21 metre hesaplanmıştır. Mevcut 3B gösterimde bina, dikdörtgen ana gövdeyle temsil edilmektedir. Gerçek binanın kademeli bölümleri, girinti ve çıkıntıları ile kavisli cephesi henüz ayrıntılı olarak modellenmemiştir.
+
 ## 🏢 K Blok Cephe Yönleri ve Azimut Açıları
 
-K Blok binasının cephe yönleri, Google Earth Pro üzerinden yapılan uydu görüntüsü incelemeleri ve bina doğrultusu ölçümleri esas alınarak belirlenmiştir.
+K Blok binasının cephe yönleri, Google Earth üzerinden yapılan uydu görüntüsü incelemeleri ve bina kenarlarının doğrultu ölçümleri esas alınarak belirlenmiştir.
 
-Cephelerin azimut açıları, coğrafi kuzey referans alınarak saat yönünde 0°–360° arasında tanımlanmıştır.
+Cephelerin dışa bakan normal doğrultuları, ölçülen kenar doğrultularına 90° eklenerek veya çıkarılarak yaklaşık olarak hesaplanmıştır.
 
-| Cephe | Yön | Azimut Açısı |
+Cephe azimut açıları coğrafi kuzey referans alınarak saat yönünde 0°–360° arasında tanımlanmıştır.
+
+| Cephe | Yön | Azimut açısı |
 |---|---|---|
-| 1. Cephe | Kuzeydoğuya bakan cephe | 23,70° |
-| 2. Cephe | Güneydoğuya bakan cephe | 113,70° |
-| 3. Cephe | Güneybatıya bakan cephe | 203,70° |
-| 4. Cephe | Kuzeybatıya bakan cephe | 293,70° |
+| 1. Cephe | Kuzey-kuzeydoğuya bakan cephe | 23,81° |
+| 2. Cephe | Doğu-güneydoğuya bakan cephe | 114,79° |
+| 3. Cephe | Güney-güneybatıya bakan cephe | 201,95° |
+| 4. Cephe | Batı-kuzeybatıya bakan cephe | 291,12° |
 
-### 1. Kuzeydoğu Cephesi – 23,70°
+### 1. Kuzeydoğu Cephesi – 23,81°
 
-Bu cephe, coğrafi kuzey yönünden saat yönünde 23,70° doğuya dönüktür.
+Bu cephe, coğrafi kuzey yönünden saat yönünde 23,81° doğuya dönüktür.
 
 Kuzey ile kuzeydoğu arasında yer almakta olup kuzey yönüne daha yakındır.
 
-### 2. Güneydoğu Cephesi – 113,70°
+### 2. Güneydoğu Cephesi – 114,79°
 
-Bu cephe, coğrafi kuzey yönünden saat yönünde 113,70° açısına sahiptir.
+Bu cephe, coğrafi kuzey yönünden saat yönünde 114,79° açısına sahiptir.
 
-Doğu yönünden güneye doğru 23,70° dönük olup doğu ile güney arasında konumlanmaktadır.
+Doğu yönünden güneye doğru 24,79° dönüktür.
 
-### 3. Güneybatı Cephesi – 203,70°
+### 3. Güneybatı Cephesi – 201,95°
 
-Bu cephe, coğrafi kuzey yönünden saat yönünde 203,70° açısına sahiptir.
+Bu cephe, coğrafi kuzey yönünden saat yönünde 201,95° açısına sahiptir.
 
-Güney yönünden batıya doğru 23,70° dönük olup güney ile batı arasında konumlanmaktadır.
+Güney yönünden batıya doğru 21,95° dönüktür.
 
-### 4. Kuzeybatı Cephesi – 293,70°
+### 4. Kuzeybatı Cephesi – 291,12°
 
-Bu cephe, coğrafi kuzey yönünden saat yönünde 293,70° açısına sahiptir.
+Bu cephe, coğrafi kuzey yönünden saat yönünde 291,12° açısına sahiptir.
 
-Batı yönünden kuzeye doğru 23,70° dönük olup batı ile kuzey arasında konumlanmaktadır.
+Batı yönünden kuzeye doğru 21,12° dönüktür.
 
-**Not:** Cephe adları genel yönleri ifade etmektedir. Hesaplamalarda esas alınan değerler, Google Earth Pro ölçümlerinden belirlenen sayısal azimut açılarıdır.
+**Not:** Cephe adları genel yön gruplarını ifade etmektedir. Sayısal hesaplamalarda Google Earth ölçümlerinden türetilen yaklaşık azimut açıları kullanılmaktadır. Bunlar mimari projeden alınmış kesin cephe yönleri değildir.
 
 ## 📐 Güneş Geometrisi Hesaplama Yöntemi
 
-Saatlik güneş geometrisi hesaplamalarında, *Solar Engineering of Thermal Processes* kitabında yer alan güneş geometrisi bağıntıları esas alınmıştır.
+Saatlik güneş geometrisi hesaplamalarında, *Solar Engineering of Thermal Processes, Photovoltaics and Wind* kitabında yer alan güneş geometrisi bağıntıları esas alınmıştır.
 
 Seçilen tarih ve coğrafi konuma bağlı olarak güneşin deklinasyon, saat, zenit, yükseklik ve azimut açıları hesaplanmıştır.
 
@@ -88,22 +113,26 @@ Kendi hesaplama yöntemimizde güneş azimut açısı güney referanslı olarak 
 
 pvlib karşılaştırmalarında ise kullanılan açı referansları arasında gerekli matematiksel dönüşümler uygulanmıştır.
 
-Hesaplanan saatlik güneş konumu sonuçları pvlib verileriyle karşılaştırılmış ve iki yöntem arasındaki açısal farklar belirlenmiştir.
+Hesaplanan saatlik güneş konumu sonuçları pvlib verileriyle karşılaştırılabilecek şekilde tablolaştırılmıştır.
 
 ## ☀️ Cephelere Güneş Geliş Açısı Analizi
 
-K Blok binasının dört cephesi için güneş ışınlarının geliş açıları hesaplanmıştır.
+K Blok binasının dört ana cephesi için güneş ışınlarının geliş açıları hesaplanmaktadır.
 
 Bina cepheleri düşey yüzeyler olarak değerlendirilmiş ve yüzey eğim açıları **90°** kabul edilmiştir.
 
-Her cephe için hesaplamalarda şu bilgiler kullanılmıştır:
+Her cephe için hesaplamalarda şu bilgiler kullanılmaktadır:
 
 - Güneşin saatlik yükseklik açısı
 - Güneşin saatlik azimut açısı
 - Cephenin azimut açısı
 - Cephenin yüzey eğim açısı
 
-Her saat için elde edilen geliş açıları pvlib sonuçlarıyla karşılaştırılmıştır.
+Düşey yüzeyler için kullanılan bağıntı:
+
+**cos(θ) = cos(α) × cos(A_güneş − A_cephe)**
+
+Her saat için elde edilen geliş açıları pvlib AOI hesaplamalarıyla karşılaştırılmaktadır.
 
 Karşılaştırma tablolarında her cephe için üç değer yan yana gösterilmektedir:
 
@@ -111,9 +140,11 @@ Karşılaştırma tablolarında her cephe için üç değer yan yana gösterilme
 2. pvlib ile hesaplanan geliş açısı
 3. İki hesaplama arasındaki mutlak açısal fark
 
-Güneşin ufkun altında bulunduğu gece saatleri, saatlik sonuç tablolarında korunmuştur. Ancak bu saatlerde doğrudan güneş ışınımı bulunmadığından cephe geliş açısı alanları boş bırakılmıştır.
+Güneşin ufkun altında bulunduğu gece saatleri, saatlik sonuç tablolarında korunmaktadır. Ancak bu saatlerde cephe geliş açısı alanları boş bırakılmaktadır.
 
 90°'den büyük geliş açıları, güneşin ilgili cephenin arka tarafında bulunduğunu ifade etmektedir.
+
+**Not:** Yeni K Blok koordinatları ve cephe yönleri yazılıma aktarılmıştır. Yeni bina için pvlib karşılaştırma sonuçlarının sayısal kontrolü henüz tamamlanmamıştır. Önceki binaya ait örnek karşılaştırma değerleri kullanılmamaktadır.
 
 ## 📊 Analiz Paneli ve Sonuçların Dışa Aktarılması
 
@@ -127,13 +158,18 @@ Geliştirilen analiz paneli üzerinden kullanıcılar:
 - İki hesaplama yöntemi arasındaki farkları değerlendirebilir.
 - Sonuçları tablo ve grafikler üzerinden görüntüleyebilir.
 - Cephe analizi sonuçlarını Excel formatında indirebilir.
+- Yaklaşık bina ölçüleriyle oluşturulan 3B güneş konumu simülasyonunu görüntüleyebilir.
+
+Mevcut 3B gösterim, ayrıntılı bina ve çevre yapı gölgeleme modeli değildir.
 
 ## 📋 Sonraki Aşamalar
 
 Projenin devamında aşağıdaki çalışmaların gerçekleştirilmesi planlanmaktadır:
 
+- Yeni K Blok koordinatlarıyla saatlik güneş açısı sonuçlarının kontrol edilmesi
 - PVGIS üzerinden saatlik güneş ışınımı verilerinin analizi
 - K Blok ve çevresindeki yapıların gölgeleme analizi
+- Dört mevsimden örnek günler için saatlik gölge görsellerinin hazırlanması
 - Gölgeli ve gölgesiz cephe güneş kazançlarının karşılaştırılması
 - Çatı üzeri güneş enerjisi üretim potansiyelinin değerlendirilmesi
 - Enerji ve CO₂ azaltım analizleri
@@ -141,4 +177,4 @@ Projenin devamında aşağıdaki çalışmaların gerçekleştirilmesi planlanma
 
 ## 📚 Kaynakça
 
-Duffie, J. A., Beckman, W. A. & Blair, N. – *Solar Engineering of Thermal Processes*, 5. Baskı, 2020.
+Duffie, J. A., Beckman, W. A. ve Blair, N. (2020). *Solar Engineering of Thermal Processes, Photovoltaics and Wind* (5. baskı). Wiley.

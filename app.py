@@ -3,6 +3,7 @@ import streamlit as st
 import math
 from datetime import timedelta
 import pvlib
+from pvlib.iotools import get_pvgis_hourly
 import pandas as pd
 import altair as alt
 import numpy as np
@@ -19,7 +20,7 @@ def deklinasyon_hesapla(tarih):
     return delta
 
     # Duffie ve Beckman - Denklem 1.5.2 ve 1.5.3
-def gunes_zamani_hesapla(tarih, saat, boylam):
+def gunes_zamani_hesapla(tarih, saat, boylam, dakika=0):
     n = tarih.timetuple().tm_yday
 
     B = math.radians(360 * (n - 1) / 365)
@@ -35,7 +36,7 @@ def gunes_zamani_hesapla(tarih, saat, boylam):
     # Türkiye: UTC+3, standart meridyen 45 derece doğu
     zaman_duzeltmesi = 4 * (boylam - 45) + E
 
-    gunes_saati = saat + zaman_duzeltmesi / 60
+    gunes_saati = saat + dakika / 60 + zaman_duzeltmesi / 60
 
     return gunes_saati
 
@@ -225,6 +226,45 @@ if hesapla:
     else:
         baslangic, bitis = tarih_araligi
         sonuclar = []
+        pvgis_verileri = pd.DataFrame()
+        # Secilen tarih araligi icin PVGIS verilerini al
+
+        
+        try:
+            with st.spinner("PVGIS verileri aliniyor..."):
+
+                yillik_veriler = []
+
+                for yil in range(baslangic.year, bitis.year + 1):
+
+                    veri, bilgi = get_pvgis_hourly(
+                        latitude=enlem,
+                        longitude=boylam,
+                        start=yil,
+                        end=yil,
+                        components=True,
+                        surface_tilt=0
+                    )
+
+                    yillik_veriler.append(veri)
+
+                pvgis_verileri = pd.concat(yillik_veriler)
+
+                # UTC saatlerini Turkiye saatine cevir
+                pvgis_verileri.index = (
+                    pvgis_verileri.index.tz_convert("Europe/Istanbul")
+                )
+
+                # Yalnizca secilen tarihleri tut
+                pvgis_verileri = pvgis_verileri[
+                    (pvgis_verileri.index.date >= baslangic)
+                    & (pvgis_verileri.index.date <= bitis)
+                ]
+
+            st.success("PVGIS verileri basariyla alindi!")
+
+        except Exception as hata:
+            st.warning(f"PVGIS verileri alinamadi: {hata}")
 
         gun = baslangic
 
@@ -923,3 +963,173 @@ if hesapla:
             '<div class="tablo-alani">' + cephe_html + '</div>',
             unsafe_allow_html=True
         )
+                # DORT CEPHE - BIZIM HESAPLAMAMIZ VE PVGIS KARSILASTIRMASI
+        st.markdown("### ☀️ K Blok Cephelerine Gelen Toplam Güneş Işınımı Karşılaştırması")
+
+        if not pvgis_verileri.empty:
+
+            karsilastirma_sonuclari = []
+            albedo = 0.20
+
+            try:
+                with st.spinner("Dört cephe karşılaştırılıyor..."):
+
+                    for cephe, cephe_azimutu in cephe_yonleri.items():
+
+                        for yil in range(baslangic.year, bitis.year + 1):
+
+                            pv_cephe, _ = get_pvgis_hourly(
+                                latitude=enlem,
+                                longitude=boylam,
+                                start=yil,
+                                end=yil,
+                                components=True,
+                                surface_tilt=90,
+                                surface_azimuth=cephe_azimutu
+                            )
+
+                            pv_cephe.index = pv_cephe.index.tz_convert(
+                                "Europe/Istanbul"
+                            )
+
+                            ortak_saatler = pvgis_verileri.index.intersection(
+                                pv_cephe.index
+                            )
+
+                            for zaman in ortak_saatler:
+
+                                yatay = pvgis_verileri.loc[zaman]
+                                dusey = pv_cephe.loc[zaman]
+
+                                tarih = zaman.date()
+                                saat = zaman.hour
+                                dakika = zaman.minute
+
+                                delta = deklinasyon_hesapla(tarih)
+                                gunes_saati = gunes_zamani_hesapla(
+                                    tarih, saat, boylam, dakika
+                                )
+                                omega = saat_acisi_hesapla(gunes_saati)
+                                zenit = zenit_acisi_hesapla(
+                                    enlem, delta, omega
+                                )
+                                yukseklik = 90 - zenit
+                                azimut = gunes_azimutu_hesapla(
+                                    enlem, delta, omega, zenit
+                                )
+
+                                GHI = float(
+                                    yatay["poa_direct"]
+                                    + yatay["poa_sky_diffuse"]
+                                )
+                                DHI = float(yatay["poa_sky_diffuse"])
+
+                                pv_yukseklik = float(
+                                    yatay["solar_elevation"]
+                                )
+
+                                if pv_yukseklik > 3:
+                                    DNI = float(yatay["poa_direct"]) / math.sin(
+                                        math.radians(pv_yukseklik)
+                                    )
+                                else:
+                                    DNI = 0.0
+
+                                if yukseklik > 0 and azimut is not None:
+                                    cos_gelis = (
+                                        math.cos(math.radians(yukseklik))
+                                        * math.cos(
+                                            math.radians(
+                                                azimut + 180 - cephe_azimutu
+                                            )
+                                        )
+                                    )
+                                else:
+                                    cos_gelis = 0.0
+
+                                bizim_dogrudan = DNI * max(0, cos_gelis)
+                                bizim_yayili = DHI / 2
+                                bizim_yansiyan = GHI * albedo / 2
+
+                                bizim_toplam = (
+                                    bizim_dogrudan
+                                    + bizim_yayili
+                                    + bizim_yansiyan
+                                )
+
+                                pvgis_toplam = float(
+                                    dusey["poa_direct"]
+                                    + dusey["poa_sky_diffuse"]
+                                    + dusey["poa_ground_diffuse"]
+                                )
+
+                                karsilastirma_sonuclari.append({
+                                    "Tarih / Saat": zaman.strftime("%d.%m.%Y %H:%M"),
+                                    "Cephe": cephe,
+
+                                    "Hesaplanan Işınım (W/m²)": round(bizim_toplam, 2),
+                                    "PVGIS (W/m²)": round(pvgis_toplam, 2),
+                                    "Fark (W/m²)": round(pvgis_toplam - bizim_toplam, 2),
+
+                                    "Hesaplanan Doğrudan": round(bizim_dogrudan, 2),
+                                    "PVGIS Doğrudan": round(float(dusey["poa_direct"]), 2),
+
+                                    "Hesaplanan Yayılı": round(bizim_yayili, 2),
+                                    "PVGIS Yayılı": round(float(dusey["poa_sky_diffuse"]), 2),
+
+                                    "Hesaplanan Yansıyan": round(bizim_yansiyan, 2),
+                                    "PVGIS Yansıyan": round(float(dusey["poa_ground_diffuse"]), 2)
+                                })
+
+                karsilastirma_tablosu = pd.DataFrame(
+                    karsilastirma_sonuclari
+                )
+
+                if not karsilastirma_tablosu.empty:
+                    toplam_sutunlari = [
+                        "Tarih / Saat",
+                        "Cephe",
+                        "Hesaplanan Işınım (W/m²)",
+                        "PVGIS (W/m²)",
+                        "Fark (W/m²)"
+                    ]
+
+                    st.dataframe(
+                        karsilastirma_tablosu[toplam_sutunlari],
+                        use_container_width=True,
+                        hide_index=True
+                    )
+                                        # ISINIM BILESENLERI KARSILASTIRMA TABLOSU
+                    st.markdown(
+                        "### ☀️ K Blok Cephelerine Gelen Güneş Işınımı Bileşenleri"
+                    )
+
+                    bilesen_sonuclari = []
+
+                    for _, kayit in karsilastirma_tablosu.iterrows():
+                        for tur in ["Doğrudan", "Yayılı", "Yansıyan"]:
+
+                            hesaplanan = kayit[f"Hesaplanan {tur}"]
+                            pvgis = kayit[f"PVGIS {tur}"]
+
+                            bilesen_sonuclari.append({
+                                "Tarih / Saat": kayit["Tarih / Saat"],
+                                "Cephe": kayit["Cephe"],
+                                "Işınım Türü": tur,
+                                "Hesaplanan (W/m²)": hesaplanan,
+                                "PVGIS (W/m²)": pvgis,
+                                "Fark (W/m²)": round(pvgis - hesaplanan, 2)
+                            })
+
+                    bilesen_tablosu = pd.DataFrame(bilesen_sonuclari)
+
+                    st.dataframe(
+                        bilesen_tablosu,
+                        use_container_width=True,
+                        hide_index=True
+                    )
+                else:
+                    st.info("Seçilen tarihler için karşılaştırma verisi yok.")
+
+            except Exception as hata:
+                st.warning(f"Karşılaştırma yapılamadı: {hata}")

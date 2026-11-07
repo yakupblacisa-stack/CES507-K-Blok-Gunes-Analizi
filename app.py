@@ -1053,7 +1053,7 @@ if hesapla:
                 z-index: 1;
             }
 
-            table.gunes-tablosu td {
+            table.gunes-tablosu td {l
                 background-color: #1E293B;
                 color: #FFFFFF;
                 padding: 10px;
@@ -1077,6 +1077,11 @@ if hesapla:
             cephe_tablosu = tablo[cephe_sutunlari]
 
         with kademe2:
+            isinim_tab, gelis_tab = st.tabs([
+            "☀️ Işınım Hesapları",
+            "📐 Cephe Geliş Açıları"
+            ])
+        with isinim_tab:
                     # DORT CEPHE - BIZIM HESAPLAMAMIZ VE PVGIS KARSILASTIRMASI
             st.markdown("### ☀️ K Blok Cephelerine Gelen Toplam Güneş Işınımı Karşılaştırması")
 
@@ -1299,3 +1304,36 @@ if hesapla:
 
                 except Exception as hata:
                     st.warning(f"Karşılaştırma yapılamadı: {hata}")
+
+        with gelis_tab:
+            st.markdown("### 📐 K Blok Cephe Geliş Açıları")
+
+            cephe_sekmeleri = st.tabs([
+                "🧭 Kuzeydoğu",
+                "☀️ Güneydoğu",
+                "🌤️ Güneybatı",
+                "🧭 Kuzeybatı"
+            ])
+
+            for sekme, ad in zip(cephe_sekmeleri, cephe_yonleri):
+                with sekme:
+                    secili_tablo = cephe_tablosu[[
+                        "Tarih",
+                        "Saat (Türkiye)",
+                        f"{ad} Geliş Açısı (°)",
+                        f"pvlib {ad} Geliş Açısı (°)",
+                        f"{ad} Fark (°)"
+                    ]].copy()
+
+                    secili_html = secili_tablo.to_html(
+                        index=False,
+                        float_format=lambda x: f"{x:.2f}",
+                        classes="gunes-tablosu",
+                        na_rep="—"
+                    )
+
+                    st.markdown(
+                        '<div class="tablo-alani">' + secili_html + '</div>',
+                        unsafe_allow_html=True
+                    )            
+               

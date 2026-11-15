@@ -280,9 +280,10 @@ with buton_col:
         use_container_width=True
     )
     # Ana analiz kademeleri
-kademe1, kademe2 = st.tabs([
+kademe1, kademe2,kademe3 = st.tabs([
     "☀️ 1. Kademe: Güneş Açıları",
-    "📊 2. Kademe: Işınım Karşılaştırması"
+    "📊 2. Kademe: Işınım Karşılaştırması",
+    "🌳 3. Kademe: Gölge Analizi"
 ])
 
 if hesapla:
@@ -1335,5 +1336,147 @@ if hesapla:
                     st.markdown(
                         '<div class="tablo-alani">' + secili_html + '</div>',
                         unsafe_allow_html=True
-                    )            
-               
+                    )
+                    
+with kademe3:
+    st.markdown("### 🌳 K Blok – Gölge Analizi")
+    st.markdown("#### 🏢 K Blok ve Çevre Binalarının Verileri")
+    
+
+    bina_verileri = pd.DataFrame([
+        ["1. Batıdaki Uzun Bina", 595.53, 111.87, 6.48, 2, 6.00, 40.996039, 29.065656],
+        ["2. Kırmızı Çatılı Bina", 798.17, 119.82, 43.28, 3, 9.00, 40.996331, 29.065183],
+        ["3. L Biçimli Bina", 885.72, 168.33, 40.67, 2, 6.00, 40.996669, 29.065506],
+        ["4. Büyük Avlulu Bina", 1909.01, 235.77, 96.82, 2, 8.00, 40.996775, 29.064589],
+        ["5. Yeşil Çatılı Bina", 179.56, 54.81, 14.15, 1, 4.00, 40.996267, 29.066203],
+    ], columns=[
+        "Bina",
+        "Çatı Alanı (m²)",
+        "Çevre (m)",
+        "K Blok'a Uzaklık (m)",
+        "Kat Sayısı",
+        "Tahmini Yükseklik (m)",
+        "Enlem",
+        "Boylam"
+    ])
+
+    st.dataframe(
+        bina_verileri,
+        hide_index=True,
+        use_container_width=True
+    )
+
+
+    # Binaların K Blok'a göre konum hesaplamaları
+    import math
+
+    k_blok_enlem = 40.995997
+    k_blok_boylam = 29.065936
+
+    def bina_konumu_hesapla(enlem, boylam):
+        lat1 = math.radians(k_blok_enlem)
+        lon1 = math.radians(k_blok_boylam)
+        lat2 = math.radians(enlem)
+        lon2 = math.radians(boylam)
+
+        dlat = lat2 - lat1
+        dlon = lon2 - lon1
+
+        a = (
+            math.sin(dlat / 2) ** 2
+            + math.cos(lat1) * math.cos(lat2)
+            * math.sin(dlon / 2) ** 2
+        )
+
+        mesafe = 2 * 6371000 * math.asin(
+            min(1.0, math.sqrt(a))
+        )
+
+        x = math.sin(dlon) * math.cos(lat2)
+        y = (
+            math.cos(lat1) * math.sin(lat2)
+            - math.sin(lat1) * math.cos(lat2) * math.cos(dlon)
+        )
+
+        azimut = (
+            math.degrees(math.atan2(x, y)) + 360
+        ) % 360
+
+        return round(mesafe, 2), round(azimut, 2)
+
+    konum_sonuclari = bina_verileri.copy()
+
+    konum_sonuclari[
+        ["Merkezler Arası Mesafe (m)", "Konum Azimutu (°)"]
+    ] = konum_sonuclari.apply(
+        lambda satir: pd.Series(
+            bina_konumu_hesapla(
+                satir["Enlem"],
+                satir["Boylam"]
+            )
+        ),
+        axis=1
+    )
+
+    def yon_belirle(azimut):
+        yonler = [
+            "Kuzey", "Kuzeydoğu", "Doğu", "Güneydoğu",
+            "Güney", "Güneybatı", "Batı", "Kuzeybatı"
+        ]
+        indeks = int((azimut + 22.5) // 45) % 8
+        return yonler[indeks]
+
+    konum_sonuclari["Yön"] = konum_sonuclari[
+        "Konum Azimutu (°)"
+    ].apply(yon_belirle)
+
+
+    st.markdown("#### 🧭 Binaların K Blok'a Göre Konumları")
+
+    st.dataframe(
+        konum_sonuclari[[
+            "Bina",
+            "Merkezler Arası Mesafe (m)",
+            "Konum Azimutu (°)",
+            "Yön"
+        ]],
+        hide_index=True,
+        use_container_width=True
+    )
+
+
+   
+             
+    if "sonuclar" in locals() and sonuclar:
+        st.markdown("#### 🌤️ Saatlik Gölge Uzunluğu ve Yönü")
+
+        golge_sonuclari = []
+
+        for veri in sonuclar:
+            yukseklik_acisi = veri["Güneş Yüksekliği (α)"]
+            gunes_azimutu = veri["Güneş Azimut Açısı (γs)"]
+
+            if yukseklik_acisi <= 0 or gunes_azimutu is None:
+                continue
+
+            golge_azimutu = gunes_azimutu % 360
+
+            for _, bina in bina_verileri.iterrows():
+                golge_uzunlugu = bina["Tahmini Yükseklik (m)"] / math.tan(
+                    math.radians(yukseklik_acisi)
+                )
+
+                golge_sonuclari.append({
+                    "Tarih": veri["Tarih"],
+                    "Saat": veri["Saat (Türkiye)"],
+                    "Bina": bina["Bina"],
+                    "Gölge Uzunluğu (m)": round(golge_uzunlugu, 2),
+                    "Gölge Azimutu (°)": round(golge_azimutu, 2),
+                    "Gölge Yönü": yon_belirle(golge_azimutu)
+                })
+
+        st.dataframe(
+            pd.DataFrame(golge_sonuclari),
+            hide_index=True,
+            use_container_width=True
+        )

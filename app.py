@@ -9,6 +9,64 @@ import altair as alt
 import numpy as np
 import plotly.graph_objects as go
 import io
+from shapely.geometry import Polygon
+from shapely.affinity import translate
+import xml.etree.ElementTree as ET
+
+
+# 3. Aşama - Gölge analizi için yerel koordinat dönüşümü
+def koordinat_metreye(enlem, boylam):
+    referans_enlem = 40.995997
+    referans_boylam = 29.065936
+
+    x = (
+        (boylam - referans_boylam)
+        * 111320
+        * math.cos(math.radians(referans_enlem))
+    )
+
+    y = (enlem - referans_enlem) * 111320
+
+    return x, y
+
+# KML dosyasındaki bina sınırlarını Shapely poligonlarına dönüştür
+def kml_poligonlarini_oku(dosya_yolu):
+    agac = ET.parse(dosya_yolu)
+    kok = agac.getroot()
+
+    poligonlar = {}
+
+    for yer in kok.findall(".//{*}Placemark"):
+        ad = yer.find("{*}name")
+        koordinatlar = yer.find(
+            ".//{*}outerBoundaryIs/{*}LinearRing/{*}coordinates"
+        )
+
+        if ad is None or koordinatlar is None:
+            continue
+
+        noktalar = []
+
+        for nokta in koordinatlar.text.strip().split():
+            boylam, enlem = map(float, nokta.split(",")[:2])
+            x, y = koordinat_metreye(enlem, boylam)
+            noktalar.append((x, y))
+
+        if len(noktalar) >= 3:
+            poligonlar[ad.text.strip()] = Polygon(noktalar)
+
+    return poligonlar
+
+
+# K Blok ve 5 komşu binanın gerçek sınırlarını yükle
+bina_poligonlari = kml_poligonlarini_oku("KBlok_Tum_Binalar_TAM.kml")
+
+print("Yüklenen poligon sayısı:", len(bina_poligonlari))
+print("Poligon isimleri:", list(bina_poligonlari.keys()))
+
+
+
+
 # Duffie ve Beckman - Denklem 1.6.1a
 def deklinasyon_hesapla(tarih):
     n = tarih.timetuple().tm_yday
@@ -1360,6 +1418,18 @@ with kademe3:
         "Boylam"
     ])
 
+    # Komşu binaların metre cinsinden koordinatları
+    bina_verileri[["X (m)", "Y (m)"]] = bina_verileri.apply(
+        lambda satir: pd.Series(
+            koordinat_metreye(
+                satir["Enlem"],
+                satir["Boylam"]
+            )
+        ),
+        axis=1
+    )
+
+
     st.dataframe(
         bina_verileri,
         hide_index=True,
@@ -1465,14 +1535,28 @@ with kademe3:
                 golge_uzunlugu = bina["Tahmini Yükseklik (m)"] / math.tan(
                     math.radians(yukseklik_acisi)
                 )
+                
+            golge_bitis_x = (
+                bina["X (m)"]
+                + golge_uzunlugu * math.sin(math.radians(golge_azimutu))
+            )
 
-                golge_sonuclari.append({
+            golge_bitis_y = (
+                bina["Y (m)"]
+                + golge_uzunlugu * math.cos(math.radians(golge_azimutu))
+            )
+ 
+
+            golge_sonuclari.append({
                     "Tarih": veri["Tarih"],
                     "Saat": veri["Saat (Türkiye)"],
                     "Bina": bina["Bina"],
                     "Gölge Uzunluğu (m)": round(golge_uzunlugu, 2),
                     "Gölge Azimutu (°)": round(golge_azimutu, 2),
-                    "Gölge Yönü": yon_belirle(golge_azimutu)
+                    "Gölge Yönü": yon_belirle(golge_azimutu),
+                    "Gölge Bitiş X (m)": round(golge_bitis_x, 2),
+                    "Gölge Bitiş Y (m)": round(golge_bitis_y, 2)
+
                 })
 
         st.dataframe(
@@ -1480,3 +1564,4 @@ with kademe3:
             hide_index=True,
             use_container_width=True
         )
+        

@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:ex="http://earth.google.com/kml/ext">
+<Document id="document">
+	<ex:extension>base64;CooBCoEBCn8KAggBEnkKdwokCiAKAwjQDxoHCNLtZRD_ASEAAAAAAADwPykAAAAAAAAAABgAEg8KCAitgO8HEP8BEKAfGAAaGgoHCP___wcQQBIICK2A7wcQ_wEYoB8gACgAIgkIARIFCP___wcqFwgBEggI____BxD_ARkAAAAAAADwPyAAEgQIARAA</ex:extension>
+	<name>Adsız KML dosyası</name>
+	<gx:CascadingStyle kml:id="__managed_style_0AEB0967B4431BF702CB_highlight">
+		<ex:extension>base64;EgIYAQ</ex:extension>
+		<Style>
+			<IconStyle>
+				<scale>1.2</scale>
+				<Icon>
+					<href>https://earth.google.com/earth/document/icon?color=1976d2&amp;id=2000&amp;scale=4</href>
+				</Icon>
+				<hotSpot x="64" y="128" xunits="pixels" yunits="insetPixels"/>
+			</IconStyle>
+			<LabelStyle>
+			</LabelStyle>
+			<LineStyle>
+				<color>ff2dc0fb</color>
+				<width>4.8</width>
+			</LineStyle>
+			<PolyStyle>
+				<color>40ffffff</color>
+			</PolyStyle>
+			<BalloonStyle>
+				<displayMode>hide</displayMode>
+			</BalloonStyle>
+		</Style>
+	</gx:CascadingStyle>
+	<gx:CascadingStyle kml:id="__managed_style_0AEB0967B4431BF702CB_normal">
+		<ex:extension>base64;EgIYAQ</ex:extension>
+		<Style>
+			<IconStyle>
+				<Icon>
+					<href>https://earth.google.com/earth/document/icon?color=1976d2&amp;id=2000&amp;scale=4</href>
+				</Icon>
+				<hotSpot x="64" y="128" xunits="pixels" yunits="insetPixels"/>
+			</IconStyle>
+			<LabelStyle>
+			</LabelStyle>
+			<LineStyle>
+				<color>ff2dc0fb</color>
+				<width>3.2</width>
+			</LineStyle>
+			<PolyStyle>
+				<color>40ffffff</color>
+			</PolyStyle>
+			<BalloonStyle>
+				<displayMode>hide</displayMode>
+			</BalloonStyle>
+		</Style>
+	</gx:CascadingStyle>
+	<StyleMap id="__managed_style_0AEB0967B4431BF702CB">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#__managed_style_0AEB0967B4431BF702CB_normal</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#__managed_style_0AEB0967B4431BF702CB_highlight</styleUrl>
+		</Pair>
+	</StyleMap>
+	<Placemark id="0AEC2686CA431BF70293">
+		<name>komşu-1</name>
+		<LookAt>
+			<longitude>29.06587196090191</longitude>
+			<latitude>40.99605592117967</latitude>
+			<altitude>21.0166138220195</altitude>
+			<heading>0</heading>
+			<tilt>0</tilt>
+			<gx:fovy>35</gx:fovy>
+			<range>118.784258026044</range>
+			<altitudeMode>absolute</altitudeMode>
+		</LookAt>
+		<styleUrl>#__managed_style_0AEB0967B4431BF702CB</styleUrl>
+		<Polygon>
+			<outerBoundaryIs>
+				<LinearRing>
+					<coordinates>
+						29.06546112505007,40.99588429697744,0 29.06561442448523,40.99582399318494,0 29.06584151809429,40.99615950818863,0 29.06569493497041,40.99621584517865,0 29.06546112505007,40.99588429697744,0 
+					</coordinates>
+				</LinearRing>
+			</outerBoundaryIs>
+		</Polygon>
+	</Placemark>
+	<Placemark id="0E32A953A6431BF96D71">
+		<name>komşu 2 kımızı çatılı bina </name>
+		<LookAt>
+			<longitude>29.06518429759995</longitude>
+			<latitude>40.99644807936902</latitude>
+			<altitude>24.50025170019434</altitude>
+			<heading>0</heading>
+			<tilt>0</tilt>
+			<gx:fovy>35</gx:fovy>
+			<range>176.334248825151</range>
+			<altitudeMode>absolute</altitudeMode>
+		</LookAt>
+		<styleUrl>#__managed_style_0AEB0967B4431BF702CB</styleUrl>
+		<Polygon>
+			<outerBoundaryIs>
+				<LinearRing>
+					<coordinates>
+						29.06492769959816,40.99630548524478,0 29.0653481206131,40.99615986618383,0 29.06544068793395,40.99631858897751,0 29.06501816950313,40.9964636856014,0 29.06492769959816,40.99630548524478,0 
+					</coordinates>
+				</LinearRing>
+			</outerBoundaryIs>
+		</Polygon>
+	</Placemark>
+	<Placemark id="0631F5549C431BFAEBE6">
+		<name>komşu 3 l şeklinde bina </name>
+		<LookAt>
+			<longitude>29.06541193717146</longitude>
+			<latitude>40.99670468327709</latitude>
+			<altitude>26.04857777717794</altitude>
+			<heading>0</heading>
+			<tilt>0</tilt>
+			<gx:fovy>35</gx:fovy>
+			<range>139.1145472484641</range>
+			<altitudeMode>absolute</altitudeMode>
+		</LookAt>
+		<styleUrl>#__managed_style_0AEB0967B4431BF702CB</styleUrl>
+		<Polygon>
+			<outerBoundaryIs>
+				<LinearRing>
+					<coordinates>
+						29.0651748655545,40.9966994069096,0 29.06582103117647,40.99650485404895,0 29.06587991666118,40.99659894666706,0 29.06561238274112,40.9966822619667,0 29.06566665049981,40.99677801548034,0 29.0655309567823,40.99682348284116,0 29.06547422896586,40.99672389588157,0 29.06522892424928,40.99679760167587,0 29.0651748655545,40.9966994069096,0 
+					</coordinates>
+				</LinearRing>
+			</outerBoundaryIs>
+		</Polygon>
+	</Placemark>
+	<Placemark id="0B8DF55695431BFBEBB3">
+		<name>komşu 4 uzak büyük bina </name>
+		<LookAt>
+			<longitude>29.06490922501568</longitude>
+			<latitude>40.99674622676202</latitude>
+			<altitude>24.78706024676211</altitude>
+			<heading>0</heading>
+			<tilt>0</tilt>
+			<gx:fovy>35</gx:fovy>
+			<range>196.9097918151965</range>
+			<altitudeMode>absolute</altitudeMode>
+		</LookAt>
+		<styleUrl>#__managed_style_0AEB0967B4431BF702CB</styleUrl>
+		<Polygon>
+			<outerBoundaryIs>
+				<LinearRing>
+					<coordinates>
+						29.06412518475254,40.99663130487664,0 29.06434040332906,40.99656051296744,0 29.06441560092205,40.99671431938991,0 29.06467639106278,40.99664705483334,0 29.06460758586196,40.99649807457774,0 29.0648296796675,40.99642287573191,0 29.06498758082301,40.9967465480977,0 29.06431011989824,40.99694722558851,0 29.06412518475254,40.99663130487664,0 
+					</coordinates>
+				</LinearRing>
+			</outerBoundaryIs>
+		</Polygon>
+	</Placemark>
+	<Placemark id="03BA8FFC76431BFD4586">
+		<name>K blok arkası 2 katlı bina </name>
+		<LookAt>
+			<longitude>29.06614823143963</longitude>
+			<latitude>40.99630135533851</latitude>
+			<altitude>22.74499461986874</altitude>
+			<heading>0</heading>
+			<tilt>0</tilt>
+			<gx:fovy>35</gx:fovy>
+			<range>121.7889672406455</range>
+			<altitudeMode>absolute</altitudeMode>
+		</LookAt>
+		<styleUrl>#__managed_style_0AEB0967B4431BF702CB</styleUrl>
+		<Polygon>
+			<outerBoundaryIs>
+				<LinearRing>
+					<coordinates>
+						29.06610707509098,40.99621712717644,0 29.06622323500199,40.99617956580813,0 29.06630146668622,40.99631343554961,0 29.06617965697417,40.99635057112791,0 29.06610707509098,40.99621712717644,0 
+					</coordinates>
+				</LinearRing>
+			</outerBoundaryIs>
+		</Polygon>
+	</Placemark>
+	<Placemark id="012139B5A9431C03E336">
+		<name>arka plan tek cıkıntı kabul edildi </name>
+		<LookAt>
+			<longitude>29.06601014551747</longitude>
+			<latitude>40.99610385607422</latitude>
+			<altitude>21.86599803902098</altitude>
+			<heading>0</heading>
+			<tilt>0</tilt>
+			<gx:fovy>35</gx:fovy>
+			<range>117.804633611504</range>
+			<altitudeMode>absolute</altitudeMode>
+		</LookAt>
+		<styleUrl>#__managed_style_0AEB0967B4431BF702CB</styleUrl>
+		<Polygon>
+			<outerBoundaryIs>
+				<LinearRing>
+					<coordinates>
+						29.06585384269829,40.99608245936506,0 29.06600912043238,40.99603751196138,0 29.06604780160085,40.99609867111305,0 29.06589141868831,40.99615041755663,0 29.06585384269829,40.99608245936506,0 
+					</coordinates>
+				</LinearRing>
+			</outerBoundaryIs>
+		</Polygon>
+	</Placemark>
+	<Placemark id="0C4F42717F431C0491AF">
+		<name>ana çatı  üst</name>
+		<LookAt>
+			<longitude>29.06601014551747</longitude>
+			<latitude>40.99610385607422</latitude>
+			<altitude>21.86599803902098</altitude>
+			<heading>0</heading>
+			<tilt>0</tilt>
+			<gx:fovy>35</gx:fovy>
+			<range>117.804633611504</range>
+			<altitudeMode>absolute</altitudeMode>
+		</LookAt>
+		<styleUrl>#__managed_style_0AEB0967B4431BF702CB</styleUrl>
+		<Polygon>
+			<outerBoundaryIs>
+				<LinearRing>
+					<coordinates>
+						29.06601014550563,40.99603282412591,0 29.06585875554893,40.9960708511492,0 29.06577682671366,40.99594058927034,0 29.06599858638435,40.99587087554778,0 29.06611518238782,40.99607326122152,0 29.06604983696716,40.9960986710949,0 29.06601014550563,40.99603282412591,0 
+					</coordinates>
+				</LinearRing>
+			</outerBoundaryIs>
+		</Polygon>
+	</Placemark>
+	<Placemark id="0C6A3FD545431C054C5C">
+		<name>1 düşü ön taraf</name>
+		<LookAt>
+			<longitude>29.06592923856418</longitude>
+			<latitude>40.99584734063585</latitude>
+			<altitude>17.54338933480468</altitude>
+			<heading>0</heading>
+			<tilt>0</tilt>
+			<gx:fovy>35</gx:fovy>
+			<range>122.1264910313221</range>
+			<altitudeMode>absolute</altitudeMode>
+		</LookAt>
+		<styleUrl>#__managed_style_0AEB0967B4431BF702CB</styleUrl>
+		<Polygon>
+			<outerBoundaryIs>
+				<LinearRing>
+					<coordinates>
+						29.06577435430118,40.99588014407315,0 29.06599270715986,40.99581001586257,0 29.06602189381841,40.99585469145546,0 29.06580341752917,40.99592271832626,0 29.06577435430118,40.99588014407315,0 
+					</coordinates>
+				</LinearRing>
+			</outerBoundaryIs>
+		</Polygon>
+	</Placemark>
+	<Placemark id="09DB1FC3C1431C05DBE1">
+		<name>2 düşü ön taraf </name>
+		<LookAt>
+			<longitude>29.06592923856418</longitude>
+			<latitude>40.99584734063585</latitude>
+			<altitude>17.54338933480468</altitude>
+			<heading>0</heading>
+			<tilt>0</tilt>
+			<gx:fovy>35</gx:fovy>
+			<range>122.1264910313221</range>
+			<altitudeMode>absolute</altitudeMode>
+		</LookAt>
+		<styleUrl>#__managed_style_0AEB0967B4431BF702CB</styleUrl>
+		<Polygon>
+			<outerBoundaryIs>
+				<LinearRing>
+					<coordinates>
+						29.06577837779164,40.99586107577345,0 29.06575569703617,40.99582837213546,0 29.06599395705403,40.99574984721082,0 29.06600863172057,40.99578601979967,0 29.06577837779164,40.99586107577345,0 
+					</coordinates>
+				</LinearRing>
+			</outerBoundaryIs>
+		</Polygon>
+	</Placemark>
+</Document>
+</kml>

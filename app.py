@@ -11,6 +11,7 @@ import plotly.graph_objects as go
 import io
 from shapely.geometry import Polygon
 from shapely.affinity import translate
+from shapely.ops import unary_union
 import xml.etree.ElementTree as ET
 
 
@@ -64,7 +65,53 @@ bina_poligonlari = kml_poligonlarini_oku("KBlok_Tum_Binalar_TAM.kml")
 print("Yüklenen poligon sayısı:", len(bina_poligonlari))
 print("Poligon isimleri:", list(bina_poligonlari.keys()))
 
+# Bina sınırlarından zemin üzerindeki gölge alanını hesapla
+def golge_alani_hesapla(bina_poligonu, bina_yuksekligi,
+                       gunes_yuksekligi, golge_azimutu,
+                       alici_yuksekligi=0.0):
 
+    if gunes_yuksekligi <= 0:
+        return Polygon()
+
+    
+    yukseklik_farki = bina_yuksekligi - alici_yuksekligi
+
+    if yukseklik_farki <= 0:
+        return Polygon()
+
+    golge_uzunlugu = yukseklik_farki / math.tan(
+        math.radians(gunes_yuksekligi)
+    )
+
+
+    dx = golge_uzunlugu * math.sin(
+        math.radians(golge_azimutu)
+    )
+    dy = golge_uzunlugu * math.cos(
+        math.radians(golge_azimutu)
+    )
+
+    kaydirilmis_poligon = translate(
+        bina_poligonu, xoff=dx, yoff=dy
+    )
+
+    parcalar = [bina_poligonu, kaydirilmis_poligon]
+    kose_noktalari = list(bina_poligonu.exterior.coords)
+
+    for i in range(len(kose_noktalari) - 1):
+        x1, y1 = kose_noktalari[i]
+        x2, y2 = kose_noktalari[i + 1]
+
+        golge_parcasi = Polygon([
+            (x1, y1),
+            (x2, y2),
+            (x2 + dx, y2 + dy),
+            (x1 + dx, y1 + dy)
+        ])
+
+        parcalar.append(golge_parcasi)
+
+    return unary_union(parcalar)
 
 
 # Duffie ve Beckman - Denklem 1.6.1a
@@ -330,6 +377,8 @@ with tarih_col:
         "📅 Hesaplama Tarih Aralığı",
         value=()
     )
+    if "hesaplama_yapildi" not in st.session_state:
+     st.session_state.hesaplama_yapildi = False
 
 with buton_col:
     st.markdown("<div style='height: 27px'></div>", unsafe_allow_html=True)
@@ -345,6 +394,9 @@ kademe1, kademe2,kademe3 = st.tabs([
 ])
 
 if hesapla:
+    st.session_state.hesaplama_yapildi = True
+
+if st.session_state.hesaplama_yapildi:
 
     if len(tarih_araligi) != 2:
         st.warning("Lütfen başlangıç ve bitiş tarihlerini seçin.")
@@ -1418,6 +1470,64 @@ with kademe3:
         "Boylam"
     ])
 
+    # Komşu binaların köşe koordinatlarını ve yüksekliklerini eşleştir
+    komsu_kml_adlari = [
+        "komşu-1",
+        "komşu 2 kırmızı çatılı bina",
+        "komşu 3 l şeklinde bina",
+        "komşu 4 uzak büyük bina",
+        "K blok arkası 2 katlı bina"
+    ]
+
+    komsu_geometrileri = {}
+
+    for i, kml_adi in enumerate(komsu_kml_adlari):
+        komsu_geometrileri[bina_verileri.iloc[i]["Bina"]] = {
+            "poligon": next(poligon for ad, poligon in bina_poligonlari.items() if ad.startswith(kml_adi[:7])),
+            "yukseklik": bina_verileri.iloc[i]["Tahmini Yükseklik (m)"]
+        }
+
+    # K Blok'un dört çatı bölümünün gerçek sınırları
+    kblok_cati_poligonlari = {
+        "Ana Çatı": bina_poligonlari["ana çatı  üst"],
+        "Arka Çıkıntılar": next(poligon for ad, poligon in bina_poligonlari.items() if ad.startswith("arka plan")),
+        "Ön Alçak Kademe 1": bina_poligonlari["1 düşü ön taraf"],
+        "Ön Alçak Kademe 2": bina_poligonlari["2 düşü ön taraf"]
+    }
+
+    # K Blok çatı bölümlerinin mevcut yükseklikleri
+    
+    kblok_cati_yukseklikleri = {
+        "Ana Çatı": 15.0,
+        "Arka Çıkıntılar": (18.0, 21.0),
+        "Ön Alçak Kademe 1": 6.0,
+        "Ön Alçak Kademe 2": 3.0
+    }
+        # K Blok çatı bölümlerinin birleşik geometrisi
+    kblok_birlesik_geometri = unary_union(
+        list(kblok_cati_poligonlari.values())
+    )
+    st.write("K Blok birleşik geometri türü:", kblok_birlesik_geometri.geom_type)
+    st.write(
+    "K Blok ayrı poligon sayısı:",
+    len(kblok_birlesik_geometri.geoms)
+)
+        # K Blok cephe analizi için çatı sınırlarının kenarları
+    kblok_cephe_kenarlari = []
+
+    for bolum_adi, poligon in kblok_cati_poligonlari.items():
+        koordinatlar = list(poligon.exterior.coords)
+
+        for i in range(len(koordinatlar) - 1):
+            baslangic = koordinatlar[i]
+            bitis = koordinatlar[i + 1]
+
+            kblok_cephe_kenarlari.append({
+                "bolum": bolum_adi,
+                "baslangic": baslangic,
+                "bitis": bitis
+            })
+
     # Komşu binaların metre cinsinden koordinatları
     bina_verileri[["X (m)", "Y (m)"]] = bina_verileri.apply(
         lambda satir: pd.Series(
@@ -1565,3 +1675,178 @@ with kademe3:
             use_container_width=True
         )
         
+        # Komşu binaların saatlik zemin gölge izdüşümleri
+        geometrik_golge_sonuclari = []
+
+        for veri in sonuclar:
+            yukseklik = veri["Güneş Yüksekliği (α)"]
+            azimut = veri["Güneş Azimut Açısı (γs)"]
+
+            if yukseklik <= 0 or azimut is None:
+                continue
+
+            golge_yonu = azimut % 360
+
+            for bina_adi, bilgi in komsu_geometrileri.items():
+                golge = golge_alani_hesapla(
+                    bilgi["poligon"],
+                    bilgi["yukseklik"],
+                    yukseklik,
+                    golge_yonu
+                )
+
+                geometrik_golge_sonuclari.append({
+                    "Tarih": veri["Tarih"],
+                    "Saat": veri["Saat (Türkiye)"],
+                    "Bina": bina_adi,
+                    "Gölge İzdüşümü (m²)": round(golge.area, 2)
+                })
+
+        st.markdown("#### Geometrik Zemin Gölge İzdüşümleri")
+        st.dataframe(
+            pd.DataFrame(geometrik_golge_sonuclari),
+            hide_index=True,
+            use_container_width=True
+        )
+
+        # K Blok çatı bölümlerine düşen saatlik komşu bina gölgeleri
+        cati_golge_sonuclari = []
+
+        for veri in sonuclar:
+            gunes_yuksekligi = veri["Güneş Yüksekliği (α)"]
+            gunes_azimutu = veri["Güneş Azimut Açısı (γs)"]
+
+            if gunes_yuksekligi <= 0 or gunes_azimutu is None:
+                continue
+
+            golge_yonu = gunes_azimutu % 360
+
+            for cati_adi, cati_poligonu in kblok_cati_poligonlari.items():
+                cati_yuksekligi = kblok_cati_yukseklikleri[cati_adi]
+
+                # Birleşik arka çıkıntılarda en düşük seviye esas alınır.
+                if isinstance(cati_yuksekligi, tuple):
+                    cati_yuksekligi = min(cati_yuksekligi)
+
+                golgeler = []
+
+                for bilgi in komsu_geometrileri.values():
+                    golge = golge_alani_hesapla(
+                        bilgi["poligon"],
+                        bilgi["yukseklik"],
+                        gunes_yuksekligi,
+                        golge_yonu,
+                        alici_yuksekligi=cati_yuksekligi
+                    )
+
+                    if not golge.is_empty:
+                        golgeler.append(golge)
+
+                toplam_golge = (
+                    unary_union(golgeler) if golgeler else Polygon()
+                )
+
+                golgelenen_alan = cati_poligonu.intersection(
+                    toplam_golge
+                ).area
+
+                # Gölge ile çatı arasındaki en kısa mesafe
+                golge_mesafesi = (
+                    round(cati_poligonu.distance(toplam_golge), 2)
+                    if not toplam_golge.is_empty
+                    else None
+                )
+
+
+                cati_golge_sonuclari.append({
+                    "Tarih": veri["Tarih"],
+                    "Saat": veri["Saat (Türkiye)"],
+                    "Çatı Bölümü": cati_adi,
+                    "Gölgelenen Alan (m²)": round(golgelenen_alan, 2),
+                    "Gölgeye En Yakın Mesafe (m)": golge_mesafesi
+                })
+
+        st.markdown("#### K Blok Çatı Gölge Analizi")
+        st.dataframe(
+            pd.DataFrame(cati_golge_sonuclari),
+            hide_index=True,
+            use_container_width=True
+        )
+
+        # K Blok ve komşu binaların geometrik yerleşimi
+        st.markdown("#### K Blok ve Komşu Binaların Yerleşimi")
+
+        fig_binalar = go.Figure()
+
+        for bina_adi, poligon in bina_poligonlari.items():
+            x, y = poligon.exterior.xy
+
+            fig_binalar.add_trace(go.Scatter(
+                x=list(x),
+                y=list(y),
+                mode="lines",
+                fill="toself",
+                name=bina_adi
+            ))
+
+        fig_binalar.update_layout(
+            xaxis_title="Doğu - Batı (m)",
+            yaxis_title="Kuzey - Güney (m)",
+            yaxis=dict(scaleanchor="x", scaleratio=1),
+            height=650
+        )
+
+        # Saatlik gölge görüntüleme seçimi
+        secili_saat = st.selectbox(
+            "Gölge görüntüleme saati",
+            sorted(set(str(v["Saat (Türkiye)"]) for v in sonuclar)),
+            index=3
+        )
+        ornek_veri = next(
+            (v for v in sonuclar if str(v["Saat (Türkiye)"]) == secili_saat),
+            None
+        )
+
+        if ornek_veri is not None:
+            ornek_yukseklik = ornek_veri["Güneş Yüksekliği (α)"]
+            ornek_azimut = ornek_veri["Güneş Azimut Açısı (γs)"]
+
+            if ornek_yukseklik > 0 and ornek_azimut is not None:
+                for bina_adi, bilgi in komsu_geometrileri.items():
+                    golge = golge_alani_hesapla(
+                        bilgi["poligon"],
+                        bilgi["yukseklik"],
+                        ornek_yukseklik,
+                        ornek_azimut % 360
+                    )
+
+                    # Bina tabanını gölge çiziminden ayır
+                    golge = golge.difference(bilgi["poligon"])
+
+                    if golge.is_empty:
+                        continue
+
+                    parcalar = (
+                        [golge] if golge.geom_type == "Polygon"
+                        else list(golge.geoms)
+                    )
+
+                    for parca in parcalar:
+                        x, y = parca.exterior.xy
+
+                        fig_binalar.add_trace(go.Scatter(
+                            x=list(x),
+                            y=list(y),
+                            mode="lines",
+                            fill="toself",
+                            fillcolor="rgba(70,70,70,0.35)",
+                            line=dict(color="rgba(70,70,70,0.5)"),
+                            name="Gölge - " + bina_adi,
+                            showlegend=False
+                        ))
+
+
+        st.plotly_chart(fig_binalar, use_container_width=True)
+
+
+

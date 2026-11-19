@@ -9,7 +9,7 @@ import altair as alt
 import numpy as np
 import plotly.graph_objects as go
 import io
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, Point
 from shapely.affinity import translate
 from shapely.ops import unary_union
 import xml.etree.ElementTree as ET
@@ -1447,7 +1447,8 @@ if st.session_state.hesaplama_yapildi:
                         '<div class="tablo-alani">' + secili_html + '</div>',
                         unsafe_allow_html=True
                     )
-                    
+if "sonuclar" not in locals():
+    st.stop()                    
 with kademe3:
     st.markdown("### 🌳 K Blok – Gölge Analizi")
     st.markdown("#### 🏢 K Blok ve Çevre Binalarının Verileri")
@@ -1527,7 +1528,242 @@ with kademe3:
                 "baslangic": baslangic,
                 "bitis": bitis
             })
+                # K Blok kenarlarının uzunluk ve doğrultuları
+    for sira, kenar in enumerate(kblok_cephe_kenarlari, start=1):
+        x1, y1 = kenar["baslangic"]
+        x2, y2 = kenar["bitis"]
 
+        dx = x2 - x1
+        dy = y2 - y1
+
+        uzunluk = math.hypot(dx, dy)
+        dogrultu = math.degrees(math.atan2(dx, dy)) % 360
+        poligon = kblok_cati_poligonlari[kenar["bolum"]]
+
+        dis_azimut = (
+            dogrultu + (90 if poligon.exterior.is_ccw else -90)
+        ) % 360
+        kenar["uzunluk"] = uzunluk
+        kenar["dis_azimut"] = dis_azimut
+
+        kenar["cephe_yonu"] = min(
+        cephe_yonleri,
+        key=lambda yon: abs(
+            (dis_azimut - cephe_yonleri[yon] + 180) % 360 - 180
+        )
+    )
+
+        print(
+            f"Kenar {sira} | {kenar['bolum']} | "
+            f"Uzunluk: {uzunluk:.2f} m | "
+            f"Doğrultu: {dogrultu:.2f}° | Dış Azimut: {dis_azimut:.2f}°"
+        )
+            # Kenarları dört cephe yönüne göre gruplandır
+    cephe_kenar_gruplari = {
+        yon: [] for yon in cephe_yonleri
+    }
+
+    for kenar in kblok_cephe_kenarlari:
+        cephe_kenar_gruplari[kenar["cephe_yonu"]].append(kenar)
+            # Cephe gruplarındaki kenar numaralarını göster
+    for yon, kenarlar in cephe_kenar_gruplari.items():
+        numaralar = [
+            kblok_cephe_kenarlari.index(kenar) + 1
+            for kenar in kenarlar
+        ]
+        print(f"{yon}: {numaralar}")
+            # Diğer çatı bölümlerine yakın kenarları belirle
+    from shapely.geometry import LineString
+
+    for sira, kenar in enumerate(kblok_cephe_kenarlari, start=1):
+        cizgi = LineString([kenar["baslangic"], kenar["bitis"]])
+
+        mesafeler = [
+            cizgi.distance(poligon)
+            for ad, poligon in kblok_cati_poligonlari.items()
+            if ad != kenar["bolum"]
+        ]
+
+        print(f"Kenar {sira} | Diğer bölüme en yakın: {min(mesafeler):.2f} m")
+            # Cephe analizinde kullanılacak yükseklikler
+            # K Blok kenarlarının dış sınır kontrolü
+        dis_sinir_sonuclari = []
+    for sira, kenar in enumerate(kblok_cephe_kenarlari, start=1):
+         cizgi = LineString([kenar["baslangic"], kenar["bitis"]])
+
+         dis_sinir_uzunlugu = cizgi.intersection(
+            kblok_birlesik_geometri.boundary
+        ).length
+         ic_sinir_uzunlugu = max(
+            0.0,
+            kenar["uzunluk"] - dis_sinir_uzunlugu
+        )
+
+         print(
+            f"Kenar {sira}: "
+            f"Dış sınır {dis_sinir_uzunlugu:.2f} m / "
+            f"Toplam {kenar['uzunluk']:.2f} m"
+        )
+         dis_sinir_sonuclari.append({
+            "İç Sınır (m)": round(ic_sinir_uzunlugu, 2),
+            "Çatı Bölümü": kenar["bolum"],
+            "Çatı Yüksekliği (m)": {
+            "Ana Çatı": 15.0,
+            "Arka Çıkıntılar": 15.0,
+            "Ön Alçak Kademe 1": 6.0,
+            "Ön Alçak Kademe 2": 3.0
+        }[kenar["bolum"]],
+            "Kenar No": sira,
+            "Cephe Yönü": kenar["cephe_yonu"],
+            "Dış Sınır (m)": round(dis_sinir_uzunlugu, 2),
+            "Toplam Uzunluk (m)": round(kenar["uzunluk"], 2)
+        })
+    st.subheader("K Blok - 18 Kenarın Dış Sınır Kontrolü")
+    st.dataframe(pd.DataFrame(dis_sinir_sonuclari), hide_index=True)
+    cephe_bolum_yukseklikleri = {
+        "Ana Çatı": 15.0,
+        "Arka Çıkıntılar": 15.0,
+        "Ön Alçak Kademe 1": 6.0,
+        "Ön Alçak Kademe 2": 3.0
+    }
+
+    for kenar in kblok_cephe_kenarlari:
+        kenar["yukseklik"] = cephe_bolum_yukseklikleri[kenar["bolum"]]
+            # Ön kademeli cephelerin dikey yükseklik aralıkları
+    on_cephe_yukseklik_araliklari = {
+        3: (6.0, 15.0),
+        11: (3.0, 6.0),
+        16: (0.0, 3.0)
+    }
+        # Ön cephe için dikey yüzey adaylarını oluştur
+    on_cephe_yuzeyleri = []
+
+    for kenar_no, (alt, ust) in on_cephe_yukseklik_araliklari.items():
+        kenar = kblok_cephe_kenarlari[kenar_no - 1]
+
+        on_cephe_yuzeyleri.append({
+            "kenar_no": kenar_no,
+            "baslangic": kenar["baslangic"],
+            "bitis": kenar["bitis"],
+            "alt_yukseklik": alt,
+            "ust_yukseklik": ust,
+            "alan": kenar["uzunluk"] * (ust - alt)
+        })
+            # Cephedeki bir noktanın komşu bina gölgesinde kalıp kalmadığını kontrol et
+    def cephe_noktasi_golgede_mi(x, y, z, gunes_yuksekligi, gunes_azimutu):
+        if gunes_yuksekligi <= 0:
+            return False
+
+        gunes_yonu = math.radians((gunes_azimutu + 180) % 360)
+        uzaklik = 1000.0
+
+        isin = LineString([
+            (x, y),
+            (
+                x + uzaklik * math.sin(gunes_yonu),
+                y + uzaklik * math.cos(gunes_yonu)
+            )
+        ])
+
+        for bilgi in komsu_geometrileri.values():
+            kesisim = isin.intersection(bilgi["poligon"])
+
+            if kesisim.is_empty:
+                continue
+
+            mesafe = kesisim.distance(Point(x, y))
+            isin_yuksekligi = z + mesafe * math.tan(
+                math.radians(gunes_yuksekligi)
+            )
+
+            if isin_yuksekligi < bilgi["yukseklik"]:
+                return True
+
+        return False
+        # Ön cephe yüzeylerinde gölge kontrol noktaları
+    for yuzey in on_cephe_yuzeyleri:
+        x1, y1 = yuzey["baslangic"]
+        x2, y2 = yuzey["bitis"]
+
+        noktalar = []
+
+        for i in range(5):
+            t = (i + 0.5) / 5
+
+            for j in range(5):
+                z = yuzey["alt_yukseklik"] + (
+                    (j + 0.5) / 5
+                ) * (
+                    yuzey["ust_yukseklik"] - yuzey["alt_yukseklik"]
+                )
+
+                noktalar.append((
+                    x1 + t * (x2 - x1),
+                    y1 + t * (y2 - y1),
+                    z
+                ))
+
+        yuzey["kontrol_noktalari"] = noktalar
+            # Ön cephe için örnek saatlik gölge kontrolü
+    ornek_saat = next(
+        (v for v in sonuclar if v["Güneş Yüksekliği (α)"] > 0),
+        None
+    )
+    print("GÖLGE KONTROL TESTİ")
+    print("Örnek saat:", ornek_saat)
+    print("Ön cephe yüzey sayısı:", len(on_cephe_yuzeyleri))
+
+    if ornek_saat is not None:
+        for yuzey in on_cephe_yuzeyleri:
+            golgeli_nokta = sum(
+                cephe_noktasi_golgede_mi(
+                    x, y, z,
+                    ornek_saat["Güneş Yüksekliği (α)"],
+                    ornek_saat["Güneş Azimut Açısı (γs)"]
+                )
+                for x, y, z in yuzey["kontrol_noktalari"]
+            )
+
+            print(
+                f"Kenar {yuzey['kenar_no']}: "
+                f"25 noktadan {golgeli_nokta} tanesi gölgede"
+            )
+    # 3. Kademe - Saatlik ön cephe gölge analizi
+    saatlik_golge_sonuclari = []
+    for veri in sonuclar:
+     gunes_yuksekligi = veri["Güneş Yüksekliği (α)"]
+
+     if gunes_yuksekligi <= 0:
+        continue
+
+     gunes_azimutu = veri["Güneş Azimut Açısı (γs)"]
+     for yuzey in on_cephe_yuzeyleri:
+        noktalar = yuzey["kontrol_noktalari"]
+        toplam_nokta = len(noktalar)
+        if toplam_nokta == 0:
+            continue
+        golgeli_nokta = sum(
+            cephe_noktasi_golgede_mi(
+                x, y, z,
+                gunes_yuksekligi,
+                gunes_azimutu
+            )
+            for x, y, z in noktalar
+        )
+        golge_orani = 100 * golgeli_nokta / toplam_nokta
+        saatlik_golge_sonuclari.append({
+            "Tarih": str(veri["Tarih"]),
+            "Saat": veri["Saat (Türkiye)"],
+            "Kenar No": yuzey["kenar_no"],
+            "Toplam Nokta": toplam_nokta,
+            "Gölgeli Nokta": golgeli_nokta,
+            "Gölge Oranı (%)": round(golge_orani, 2)
+        })
+    saatlik_golge_df = pd.DataFrame(saatlik_golge_sonuclari)
+
+    st.subheader("3. Kademe - Saatlik Ön Cephe Gölge Analizi")
+    st.dataframe(saatlik_golge_df, use_container_width=True)
+    
     # Komşu binaların metre cinsinden koordinatları
     bina_verileri[["X (m)", "Y (m)"]] = bina_verileri.apply(
         lambda satir: pd.Series(
@@ -1788,7 +2024,19 @@ with kademe3:
                 fill="toself",
                 name=bina_adi
             ))
+                    # K Blok kenar numaralarını grafikte göster
+        for sira, kenar in enumerate(kblok_cephe_kenarlari, start=1):
+            x1, y1 = kenar["baslangic"]
+            x2, y2 = kenar["bitis"]
 
+            fig_binalar.add_annotation(
+                x=(x1 + x2) / 2,
+                y=(y1 + y2) / 2,
+                text=str(sira),
+                showarrow=False,
+                font=dict(size=12, color="black"),
+                bgcolor="white"
+            )
         fig_binalar.update_layout(
             xaxis_title="Doğu - Batı (m)",
             yaxis_title="Kuzey - Güney (m)",
@@ -1800,7 +2048,8 @@ with kademe3:
         secili_saat = st.selectbox(
             "Gölge görüntüleme saati",
             sorted(set(str(v["Saat (Türkiye)"]) for v in sonuclar)),
-            index=3
+            index=3,
+            key=f"kblok_golge_saati_harita_{len(sonuclar)}"
         )
         ornek_veri = next(
             (v for v in sonuclar if str(v["Saat (Türkiye)"]) == secili_saat),

@@ -1631,9 +1631,18 @@ with kademe3:
         kenar["yukseklik"] = cephe_bolum_yukseklikleri[kenar["bolum"]]
             # Ön kademeli cephelerin dikey yükseklik aralıkları
     on_cephe_yukseklik_araliklari = {
-        3: (6.0, 15.0),
-        11: (3.0, 6.0),
-        16: (0.0, 3.0)
+        2: (0.0, 15.0),
+        4: (0.0, 15.0),
+        5: (0.0, 15.0),
+        9: (0.0, 15.0),
+        10: (0.0, 15.0),
+        12: (0.0, 6.0),
+        13: (6.0, 15.0),
+        14: (0.0, 6.0),
+        15: (0.0, 3.0),
+        16: (3.0, 6.0),
+        17: (0.0, 3.0),
+        18: (0.0, 3.0)
     }
         # Ön cephe için dikey yüzey adaylarını oluştur
     on_cephe_yuzeyleri = []
@@ -1738,6 +1747,14 @@ with kademe3:
 
      gunes_azimutu = veri["Güneş Azimut Açısı (γs)"]
      for yuzey in on_cephe_yuzeyleri:
+
+        kenar = kblok_cephe_kenarlari[yuzey["kenar_no"] - 1]
+        gunes_yonu = (gunes_azimutu + 180) % 360
+        cephe_yonu = kenar["dis_azimut"]
+
+        aci_farki = (gunes_yonu - cephe_yonu + 180) % 360 - 180
+        gunes_aliyor_mu = abs(aci_farki) < 90
+
         noktalar = yuzey["kontrol_noktalari"]
         toplam_nokta = len(noktalar)
         if toplam_nokta == 0:
@@ -1755,15 +1772,102 @@ with kademe3:
             "Tarih": str(veri["Tarih"]),
             "Saat": veri["Saat (Türkiye)"],
             "Kenar No": yuzey["kenar_no"],
+            "Cephe Yönü": kblok_cephe_kenarlari[yuzey["kenar_no"] - 1]["cephe_yonu"],
             "Toplam Nokta": toplam_nokta,
             "Gölgeli Nokta": golgeli_nokta,
-            "Gölge Oranı (%)": round(golge_orani, 2)
+            "Gölge Oranı (%)": round(golge_orani, 2),
+            "Doğrudan Güneş Alıyor mu?": "Evet" if gunes_aliyor_mu else "Hayır"
+
         })
     saatlik_golge_df = pd.DataFrame(saatlik_golge_sonuclari)
 
     st.subheader("3. Kademe - Saatlik Ön Cephe Gölge Analizi")
     st.dataframe(saatlik_golge_df, use_container_width=True)
-    
+    if "karsilastirma_tablosu" in locals() and not karsilastirma_tablosu.empty:
+        st.subheader("3.3 - Gölgeli ve Gölgesiz Cephe Güneş Kazancı Karşılaştırması")
+        golge_eslestirme = saatlik_golge_df.copy()
+
+        golge_eslestirme["Tarih / Saat"] = pd.to_datetime(
+            golge_eslestirme["Tarih"] + " " + golge_eslestirme["Saat"]
+        ).dt.strftime("%d.%m.%Y %H:%M")
+        karsilastirma_tablosu["Tarih / Saat"] = pd.to_datetime(
+            karsilastirma_tablosu["Tarih / Saat"],
+            format="%d.%m.%Y %H:%M"
+        ).dt.strftime("%d.%m.%Y %H:00")
+        birlesik_tablo = golge_eslestirme.merge(
+            karsilastirma_tablosu,
+            left_on=["Tarih / Saat", "Cephe Yönü"],
+            right_on=["Tarih / Saat", "Cephe"],
+            how="left"
+        )
+        birlesik_tablo["Gölgesiz Işınım (W/m²)"] = (
+            birlesik_tablo["Hesaplanan Doğrudan"]
+            + birlesik_tablo["Hesaplanan Yayılı"]
+            + birlesik_tablo["Hesaplanan Yansıyan"]
+        )
+
+        birlesik_tablo["Gölgeli Işınım (W/m²)"] = (
+            birlesik_tablo["Hesaplanan Doğrudan"]
+            * (1 - birlesik_tablo["Gölge Oranı (%)"] / 100)
+            + birlesik_tablo["Hesaplanan Yayılı"]
+            + birlesik_tablo["Hesaplanan Yansıyan"]
+        )
+        birlesik_tablo["Kayıp (%)"] = (
+            (
+                birlesik_tablo["Gölgesiz Işınım (W/m²)"]
+                - birlesik_tablo["Gölgeli Işınım (W/m²)"]
+            )
+            / birlesik_tablo["Gölgesiz Işınım (W/m²)"].replace(0, float("nan"))
+            * 100
+        ).fillna(0).round(2)
+        ozet_tablo = (
+            birlesik_tablo.groupby("Cephe Yönü", as_index=False)[
+                ["Gölgesiz Işınım (W/m²)", "Gölgeli Işınım (W/m²)"]
+            ]
+            .mean()
+        )
+
+        ozet_tablo["Kayıp (%)"] = (
+            100
+            * (
+                ozet_tablo["Gölgesiz Işınım (W/m²)"]
+                - ozet_tablo["Gölgeli Işınım (W/m²)"]
+            )
+            / ozet_tablo["Gölgesiz Işınım (W/m²)"].replace(0, float("nan"))
+        ).fillna(0).round(2)
+
+        st.dataframe(ozet_tablo.round(2), hide_index=True, use_container_width=True)
+        enerji_tablo = (
+            birlesik_tablo.groupby("Cephe Yönü", as_index=False)[
+                ["Gölgesiz Işınım (W/m²)", "Gölgeli Işınım (W/m²)"]
+            ]
+            .mean()
+        )
+
+        enerji_tablo["Gölgesiz Enerji (kWh/m²)"] = (
+            enerji_tablo["Gölgesiz Işınım (W/m²)"]
+            * birlesik_tablo["Tarih / Saat"].nunique()
+            / 1000
+        )
+
+        enerji_tablo["Gölgeli Enerji (kWh/m²)"] = (
+            enerji_tablo["Gölgeli Işınım (W/m²)"]
+            * birlesik_tablo["Tarih / Saat"].nunique()
+            / 1000
+        )
+        enerji_tablo["Kayıp (%)"] = ozet_tablo["Kayıp (%)"]
+
+    st.subheader("Gölgeli ve Gölgesiz Güneş Enerjisi Karşılaştırması (kWh/m²)")
+
+    st.dataframe(
+        enerji_tablo[
+            ["Cephe Yönü", "Gölgesiz Enerji (kWh/m²)",
+             "Gölgeli Enerji (kWh/m²)", "Kayıp (%)"]
+        ].round(2),
+        hide_index=True,
+        use_container_width=True
+    )
+
     # Komşu binaların metre cinsinden koordinatları
     bina_verileri[["X (m)", "Y (m)"]] = bina_verileri.apply(
         lambda satir: pd.Series(
@@ -1774,7 +1878,6 @@ with kademe3:
         ),
         axis=1
     )
-
 
     st.dataframe(
         bina_verileri,
@@ -2045,14 +2148,26 @@ with kademe3:
         )
 
         # Saatlik gölge görüntüleme seçimi
+
+        secili_tarih = st.selectbox(
+            "Gölge görüntüleme tarihi",
+            sorted(set(v["Tarih"] for v in sonuclar)),
+            key="kblok_golge_tarihi"
+        )
+
         secili_saat = st.selectbox(
             "Gölge görüntüleme saati",
             sorted(set(str(v["Saat (Türkiye)"]) for v in sonuclar)),
             index=3,
-            key=f"kblok_golge_saati_harita_{len(sonuclar)}"
+            key="kblok_golge_saati_harita_tek"
         )
+        
         ornek_veri = next(
-            (v for v in sonuclar if str(v["Saat (Türkiye)"]) == secili_saat),
+            (
+                v for v in sonuclar
+                if v["Tarih"] == secili_tarih
+                and str(v["Saat (Türkiye)"]) == secili_saat
+            ),
             None
         )
 
@@ -2097,5 +2212,101 @@ with kademe3:
 
         st.plotly_chart(fig_binalar, use_container_width=True)
 
+        st.subheader("Dört Mevsim İçin Saatlik Gölge Görselleri")
+        # Saatlik görseller için gölgesiz temel bina haritası
+        fig_temel = go.Figure(
+                data=[
+                    iz for iz in fig_binalar.data
+                    if not str(iz.name).startswith("Gölge - ")
+                ],
+                layout=fig_binalar.layout
+            )
+        # Dört mevsim için örnek günler
+        mevsim_tarihleri = {
+                "İlkbahar": "2023-03-21",
+                "Yaz": "2023-06-21",
+                "Sonbahar": "2023-09-23",
+                "Kış": "2023-12-21"
+            }
+        mevsim_sekmeleri = st.tabs(list(mevsim_tarihleri.keys()))
 
+        for sekme, (mevsim, tarih) in zip(
+                mevsim_sekmeleri, mevsim_tarihleri.items()
+            ):
+                with sekme:
+                    st.write(f"{mevsim} – {tarih}")
+                    gun_mevsim = pd.Timestamp(tarih).date()
+                    delta_mevsim = deklinasyon_hesapla(gun_mevsim)
 
+                    saatlik_gunes = []
+
+                    for saat_mevsim in range(24):
+                        gunes_saati = gunes_zamani_hesapla(
+                        gun_mevsim, saat_mevsim, boylam
+                        )
+                        omega = saat_acisi_hesapla(gunes_saati)
+                        zenit = zenit_acisi_hesapla(enlem, delta_mevsim, omega)
+                        alfa = gunes_yuksekligi_hesapla(zenit)
+                        azimut = gunes_azimutu_hesapla(
+                        enlem, delta_mevsim, omega, zenit
+                        )
+
+                        if alfa > 0 and azimut is not None:
+                            saatlik_gunes.append({
+                            "Saat": f"{saat_mevsim:02d}:00",
+                            "Yükseklik": alfa,
+                            "Azimut": azimut
+                        })
+
+                    st.write(f"Gündüz saatleri: {len(saatlik_gunes)}")
+                            
+                    # İlk gündüz saati için gölge görseli
+                    if saatlik_gunes:
+                        sutunlar = st.columns(3)
+                        for i, veri in enumerate(saatlik_gunes):
+                            fig_saatlik = go.Figure(fig_temel)
+
+                            for bina_adi, bilgi in komsu_geometrileri.items():
+                                golge = golge_alani_hesapla(
+                                    bilgi["poligon"],
+                                    bilgi["yukseklik"],
+                                    veri["Yükseklik"],
+                                    veri["Azimut"] % 360
+                                )
+
+                                golge = golge.difference(bilgi["poligon"])
+
+                                if golge.is_empty:
+                                    continue
+
+                                parcalar = (
+                                    [golge] if golge.geom_type == "Polygon"
+                                    else list(golge.geoms)
+                                )
+
+                                for parca in parcalar:
+                                    x, y = parca.exterior.xy
+                                    fig_saatlik.add_trace(go.Scatter(
+                                        x=list(x),
+                                        y=list(y),
+                                        mode="lines",
+                                        fill="toself",
+                                        fillcolor="rgba(70,70,70,0.35)",
+                                        line=dict(color="rgba(70,70,70,0.5)"),
+                                        name="Gölge - " + bina_adi,
+                                        showlegend=False
+                                    ))
+
+                            fig_saatlik.update_layout(
+                                height=260,
+                                margin=dict(l=5, r=5, t=5, b=5),
+                                showlegend=False
+                            )
+
+                            with sutunlar[i % 3]:
+                                st.write(f"Saat: {veri['Saat']}")
+                                st.plotly_chart(
+                                    fig_saatlik,
+                                    use_container_width=True,
+                                    key=f"golge_{mevsim}_{i}"
+                                )
